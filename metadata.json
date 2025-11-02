@@ -1,0 +1,5 @@
+{
+  "name": "Drestien Network Access",
+  "description": "A realistic hacker terminal simulation to access the Drestien Network. Includes functional network tools and a firewall puzzle to bypass.",
+  "requestFramePermissions": []
+}
