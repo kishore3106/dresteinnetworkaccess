@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Page } from './types';
 import ToolsPage from './components/ToolsPage';
 import Terminal from './components/Terminal';
@@ -17,29 +17,8 @@ const App: React.FC = () => {
         loggedIn: false,
     });
 
-    useEffect(() => {
-        try {
-            const savedProgress = localStorage.getItem('drestien_progress');
-            if (savedProgress) {
-                const parsedProgress: Progress = JSON.parse(savedProgress);
-                setProgress(parsedProgress);
-                 if (parsedProgress.loggedIn) {
-                    setCurrentPage(Page.FileDirectory);
-                } else if (parsedProgress.passwordReset) {
-                    setCurrentPage(Page.Firewall);
-                }
-            }
-        } catch (error) {
-            console.error("Failed to parse progress from localStorage", error);
-        }
-    }, []);
-
     const updateProgress = (newProgress: Partial<Progress>) => {
-        setProgress(prev => {
-            const updated = { ...prev, ...newProgress };
-            localStorage.setItem('drestien_progress', JSON.stringify(updated));
-            return updated;
-        });
+        setProgress(prev => ({ ...prev, ...newProgress }));
     };
 
     const navigateTo = (page: Page) => setCurrentPage(page);
@@ -54,7 +33,6 @@ const App: React.FC = () => {
     };
     
     const handleReset = () => {
-        localStorage.removeItem('drestien_progress');
         setProgress({ passwordReset: false, loggedIn: false });
         setCurrentPage(Page.Tools);
     }
