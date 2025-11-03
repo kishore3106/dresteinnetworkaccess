@@ -57,7 +57,7 @@ const ToolsPage: React.FC<{ onNavigateToTerminal: () => void; }> = ({ onNavigate
                         <img src={adminProfileImage} alt="System Administrator" className="mx-auto my-2 border-2 border-cyan-800" />
                         <Stat label="Name" value="Admin" />
                         <Stat label="Role" value="Network Security" />
-                        <Stat label="Pet" value="Shadow" />
+                        
                         <div className="mt-2 pt-2 border-t border-cyan-800 text-center text-2xl tracking-widest">
                            <span className="text-cyan-400">Badge:</span> DELTA-9271
                         </div>

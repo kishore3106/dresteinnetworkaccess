@@ -683,8 +683,8 @@ const PuzzlePart3: React.FC<{ onSolve: () => void }> = ({ onSolve }) => {
 ║  ✓ BRAINSTORM ANALYSIS COMPLETE                          ║
 ║  ✓ CREATIVE PROTOCOLS VERIFIED                           ║
 ║                                                          ║
-║        ███████╗  ██████╗  ██████╗ ███████╗               ║
-║        ╚══════╝ ██╔═████╗██╔═████╗╚════██║               ║
+║                 ██████╗  ██████╗ ███████╗               ║
+║                 ██╔═████╗██╔═████╗╚════██║               ║
 ║        ███████╗ ██║██╔██║██║██╔██║    ██╔╝               ║
 ║        ╚══════╝ ████╔╝██║████╔╝██║   ██╔╝                ║
 ║                 ╚██████╔╝╚██████╔╝   ██║                 ║
@@ -799,15 +799,15 @@ const FileDirectoryPage: React.FC<{ onReset: () => void }> = ({ onReset }) => {
                          <TypingLine text="> All fragments recovered. Assembling master file..." onFinished={() => {}} speed={50}/>
                          <pre className="text-green-400 mt-4 text-center text-xl">
 {`
-  ██████╗  █████╗ ███████╗███████╗██████╗ 
- ██╔════╝ ██╔══██╗██╔════╝██╔════╝██╔══██╗
- ██║  ███╗███████║█████╗  █████╗  ██████╔╝
- ██║   ██║██╔══██║██╔══╝  ██╔══╝  ██╔══██╗
- ╚██████╔╝██║  ██║███████╗███████╗██║  ██║
-  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝
+                 ██████╗  ██████╗ ███████╗               
+                 ██╔═████╗██╔═████╗╚════██║               
+        ███████╗ ██║██╔██║██║██╔██║    ██╔╝               
+        ╚══════╝ ████╔╝██║████╔╝██║   ██╔╝                
+                 ╚██████╔╝╚██████╔╝   ██║                 
+                  ╚═════╝  ╚═════╝    ╚═╝                 
 `}
                         </pre>
-                        <p className="text-center text-2xl mt-4">FINAL FRAGMENT: <span className="text-cyan-400">CIPHER-POL--007</span></p>
+                        <p className="text-center text-2xl mt-4">FINAL FRAGMENT: <span className="text-cyan-400">CIPHER-POL-007</span></p>
                         <p className="text-center mt-2">You have successfully bypassed the Drestien Network security.</p>
                         <div className="text-center mt-8">
                             <button onClick={onReset} className="p-2 border border-red-500 text-red-500 hover:bg-red-900">[ END SIMULATION ]</button>
