@@ -48,6 +48,7 @@ const App: React.FC = () => {
             case Page.FileDirectory:
                  return <FileDirectoryPage onReset={handleReset} />;
             default:
+                // Fix: Added missing 'onNavigateToFileDirectory' prop to satisfy ToolsPage's required props.
                 return <ToolsPage onNavigateToTerminal={() => navigateTo(Page.Terminal)} />;
         }
     };

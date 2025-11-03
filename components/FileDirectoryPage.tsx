@@ -90,9 +90,43 @@ const AsciiBorder: React.FC<{title: string, children: React.ReactNode}> = ({ tit
     </div>
 );
 
+// A new, standardized, and beautifully styled PuzzleInput component.
+const PuzzleInput: React.FC<{
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    onVerify: () => void;
+    disabled?: boolean;
+    buttonText?: string;
+    maxLength?: number;
+    onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}> = ({ label, value, onChange, onVerify, disabled = false, buttonText = '[VERIFY]', maxLength, onKeyDown }) => (
+    <div className="border border-green-700 p-3 my-4 flex items-center gap-4 bg-black/30">
+        <label htmlFor={`puzzle-input-${label}`} className="text-green-400 whitespace-nowrap">{label}</label>
+        <input
+            id={`puzzle-input-${label}`}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+            maxLength={maxLength}
+            onKeyDown={onKeyDown}
+            className="flex-grow bg-transparent border-b-2 border-green-700 focus:border-cyan-400 outline-none px-2"
+            autoFocus={!disabled}
+        />
+        <button
+            onClick={onVerify}
+            disabled={disabled}
+            className="border border-green-500 px-4 py-1 text-green-400 hover:bg-green-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        >
+            {buttonText}
+        </button>
+    </div>
+);
+
+
 // --- PUZZLE STAGE COMPONENTS ---
 
-const PuzzleLanding: React.FC<{ onNavigate: (stage: string) => void }> = ({ onNavigate }) => {
+const PuzzleLanding: React.FC<{ onNavigate: (stage: string) => void, recoveredFragments: Record<string, boolean> }> = ({ onNavigate, recoveredFragments }) => {
     const [typed, setTyped] = useState(false);
     return (
         <div className="p-4">
@@ -115,22 +149,22 @@ drwxr-xr-x 8 root root      4096 May 21 14:30 ..
 -rw-r----- 1 root shadow   [█████ CORRUPTED █████] .access_log
 -rwxr-x--- 1 root shadow   8472 May 21 14:15 encryption_key_PART1.dat
 -rwxr-x--- 1 root shadow   7361 May 21 14:16 security_protocol_PART2.dat  
--rwxr-x--- 1 root shadow   9284 May 21 14:17 brainstorm_protocol_PART3.dat
+-rwxr-x--- 1 root shadow   9284 May 21 14:17 access_codes_PART3.dat
 
 [WARNING] Files partially corrupted. Click to attempt recovery...
 `}
                 </pre>
                  <div className="flex flex-col md:flex-row gap-4 mt-4">
-                     <button onClick={() => onNavigate('part1')} className="flex-1 p-4 border border-green-500 hover:bg-green-900 text-center">
-                         <p>[ CLICK HERE: RECOVER ]</p>
+                     <button onClick={() => onNavigate('part1')} className={`flex-1 p-4 border ${recoveredFragments.part1 ? 'border-gray-500 text-gray-500' : 'border-green-500 hover:bg-green-900'} text-center`} disabled={recoveredFragments.part1}>
+                         <p>[ {recoveredFragments.part1 ? 'RECOVERED' : 'CLICK HERE: RECOVER'} ]</p>
                          <p className="font-bold">PART 1</p>
                     </button>
-                     <button onClick={() => onNavigate('part2')} className="flex-1 p-4 border border-green-500 hover:bg-green-900 text-center">
-                         <p>[ CLICK HERE: RECOVER ]</p>
+                     <button onClick={() => onNavigate('part2')} className={`flex-1 p-4 border ${recoveredFragments.part2 ? 'border-gray-500 text-gray-500' : 'border-green-500 hover:bg-green-900'} text-center`} disabled={recoveredFragments.part2}>
+                         <p>[ {recoveredFragments.part2 ? 'RECOVERED' : 'CLICK HERE: RECOVER'} ]</p>
                          <p className="font-bold">PART 2</p>
                     </button>
-                     <button onClick={() => onNavigate('part3')} className="flex-1 p-4 border border-green-500 hover:bg-green-900 text-center">
-                         <p>[ CLICK HERE: RECOVER ]</p>
+                     <button onClick={() => onNavigate('part3')} className={`flex-1 p-4 border ${recoveredFragments.part3 ? 'border-gray-500 text-gray-500' : 'border-green-500 hover:bg-green-900'} text-center`} disabled={recoveredFragments.part3}>
+                         <p>[ {recoveredFragments.part3 ? 'RECOVERED' : 'CLICK HERE: RECOVER'} ]</p>
                          <p className="font-bold">PART 3</p>
                      </button>
                  </div>
@@ -159,7 +193,7 @@ const PuzzlePart1: React.FC<{ onSolve: () => void }> = ({ onSolve }) => {
 
         switch (step) {
             case 1:
-                correct = userInput === 'encrypt' || userInput === 'the first clue is encrypt';
+                correct = userInput === 'encrypt';
                 if (correct) { setStep1Solved(true); setActiveStep(2); }
                 break;
             case 2:
@@ -188,6 +222,7 @@ const PuzzlePart1: React.FC<{ onSolve: () => void }> = ({ onSolve }) => {
          setError('');
         if (finalInput.trim().toLowerCase() === 'cipher') {
             setFinalSolved(true);
+            onSolve();
         } else {
             setError('ERROR: INCORRECT FRAGMENT - TRY AGAIN');
             setTimeout(() => setError(''), 2000);
@@ -196,6 +231,34 @@ const PuzzlePart1: React.FC<{ onSolve: () => void }> = ({ onSolve }) => {
     
     const allCluesCollected = step1Solved && step2Solved && step3Solved && step4Solved;
     
+    if (finalSolved) {
+        return (
+            <div className="p-2 md:p-4">
+                 <pre className="text-sm md:text-base border-2 border-[#00cc00] p-4 text-[#00ffff]">
+{`╔══════════════════════════════════════════════════════════╗
+║  ✓ ALL CLUES DECODED                                     ║
+║  ✓ ENCRYPTION PROTOCOLS VERIFIED                         ║
+║                                                          ║
+║    ██████╗ ██╗██████╗ ██╗  ██╗███████╗██████╗             ║
+║   ██╔════╝ ██║██╔══██╗██║  ██║██╔════╝██╔══██╗            ║
+║   ██║      ██║██████╔╝███████║█████╗  ██████╔╝            ║
+║   ██║      ██║██╔═══╝ ██╔══██║██╔══╝  ██╔█╔═╝             ║
+║   ╚██████╗ ██║██║     ██║  ██║███████╗██║ █║               ║
+║    ╚═════╝ ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝╚═╝╚═╝                ║
+║                                                          ║
+║  FRAGMENT 1: CIPHER                                      ║
+║  STATUS: SECURED                                         ║
+║  VERIFICATION CODE: EK-451-ALPHA                         ║
+║                                                          ║
+║  Progress: 1/3 fragments recovered                       ║
+║  Returning to file directory...                          ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝`}
+                 </pre>
+            </div>
+        )
+    }
+
     return (
         <div className="p-2 md:p-4 text-sm md:text-base">
             <pre className="border-2 border-[#00cc00] p-2 text-[#00ffff]">
@@ -206,433 +269,572 @@ const PuzzlePart1: React.FC<{ onSolve: () => void }> = ({ onSolve }) => {
 ╚════════════════════════════════════════════════════════════════╝`}
             </pre>
             <AsciiBorder title="INVESTIGATION PROTOCOL">
-                {/* STEP 1 */}
-                {activeStep === 1 && (
-                    <div>
-                        <h3 className="text-lg">STEP 1: CRYPTOGRAPHIC DATABASE SEARCH</h3>
-                        <p className="border-t border-dashed border-green-800 pt-2 mt-2 text-green-300">
-                            {`> OBJECTIVE: Locate target's encrypted message
-> ENCODED MESSAGE FOUND: "VGhlIGZpcnN0IGNsdWUgaXMgRU5DUllQVA=="
-> ACTION REQUIRED: Decode the Base64 string`}
-                        </p>
-                        <div className="border border-[#00cc00] p-2 my-2 space-x-2 flex">
-                            <label htmlFor="step1">Enter decoded message:</label>
-                            <input id="step1" value={stepInput} onChange={e => setStepInput(e.target.value)} disabled={step1Solved} className="flex-grow bg-black border-b border-green-700 outline-none focus:border-cyan-400" />
-                            <button onClick={() => verifyStep(1)} disabled={step1Solved} className="border px-2 hover:bg-green-900">{step1Solved ? '[VERIFIED]' : '[VERIFY]'}</button>
-                        </div>
-                    </div>
-                )}
+                {error && <p className="text-red-500 text-center mb-2">{error}</p>}
 
-                {/* STEP 2 */}
-                {activeStep === 2 && (
-                    <div>
+                {/* STEPS */}
+                <div className={activeStep !== 1 ? 'opacity-50' : ''}>
+                    <h3 className="text-lg">STEP 1: CRYPTOGRAPHIC DATABASE SEARCH</h3>
+                    <p className="border-t border-dashed border-green-800 pt-2 mt-2 text-green-300">
+                        {`> ENCODED MESSAGE FOUND: "VGhlIGZpcnN0IGNsdWUgaXMgRU5DUllQVA=="\n> ACTION REQUIRED: Decode the Base64 string`}
+                    </p>
+                    <PuzzleInput 
+                        label="Decoded:"
+                        value={stepInput}
+                        onChange={setStepInput}
+                        onVerify={() => verifyStep(1)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') verifyStep(1); }}
+                        disabled={step1Solved}
+                        buttonText={step1Solved ? '[VERIFIED]' : '[VERIFY]'}
+                    />
+                </div>
+
+                {step1Solved && (
+                    <div className={activeStep !== 2 ? 'opacity-50' : ''}>
                         <h3 className="text-lg mt-4">STEP 2: HASH CRACKING</h3>
                         <p className="border-t border-dashed border-green-800 pt-2 mt-2 text-green-300">
-                        {`> HASH TYPE: MD5
-> HASH VALUE: 098f6bcd4621d373cade4e832627b4f6
-> ACTION: Use hash cracker to find plaintext`}
+                        {`> HASH VALUE: 098f6bcd4621d373cade4e832627b4f6\n> ACTION: Use MD5 cracker to find plaintext`}
                         </p>
-                        <div className="border border-[#00cc00] p-2 my-2 space-x-2 flex">
-                            <label htmlFor="step2">Enter cracked hash:</label>
-                            <input id="step2" value={stepInput} onChange={e => setStepInput(e.target.value)} disabled={step2Solved} className="flex-grow bg-black border-b border-green-700 outline-none focus:border-cyan-400" />
-                            <button onClick={() => verifyStep(2)} disabled={step2Solved} className="border px-2 hover:bg-green-900">{step2Solved ? '[VERIFIED]' : '[VERIFY]'}</button>
-                        </div>
-                    </div>
-                )}
-
-                {/* STEP 3 */}
-                {activeStep === 3 && (
-                     <div>
-                        <h3 className="text-lg mt-4">STEP 3: CIPHER WHEEL ANALYSIS</h3>
-                        <p className="border-t border-dashed border-green-800 pt-2 mt-2 text-green-300">
-                        {`> ENCODED TEXT: "FRPERG PBQR"
-> ACTION: Decode using ROT13`}
-                        </p>
-                        <div className="border border-[#00cc00] p-2 my-2 space-x-2 flex">
-                            <label htmlFor="step3">Enter decoded ROT13:</label>
-                            <input id="step3" value={stepInput} onChange={e => setStepInput(e.target.value)} disabled={step3Solved} className="flex-grow bg-black border-b border-green-700 outline-none focus:border-cyan-400" />
-                            <button onClick={() => verifyStep(3)} disabled={step3Solved} className="border px-2 hover:bg-green-900">{step3Solved ? '[VERIFIED]' : '[VERIFY]'}</button>
-                        </div>
-                    </div>
-                )}
-
-                {/* STEP 4 */}
-                {activeStep === 4 && (
-                     <div>
-                        <h3 className="text-lg mt-4">STEP 4: HEXADECIMAL TRACE</h3>
-                        <p className="border-t border-dashed border-green-800 pt-2 mt-2 text-green-300">
-                        {`> HEX DATA: 4B 45 59 57 4F 52 44
-> ACTION: Convert hex to ASCII text.`}
-                        </p>
-                        <div className="border border-[#00cc00] p-2 my-2 space-x-2 flex">
-                            <label htmlFor="step4">Enter ASCII result:</label>
-                            <input id="step4" value={stepInput} onChange={e => setStepInput(e.target.value)} disabled={step4Solved} className="flex-grow bg-black border-b border-green-700 outline-none focus:border-cyan-400" />
-                            <button onClick={() => verifyStep(4)} disabled={step4Solved} className="border px-2 hover:bg-green-900">{step4Solved ? '[VERIFIED]' : '[VERIFY]'}</button>
-                        </div>
+                        <PuzzleInput 
+                           label="Cracked:"
+                           value={stepInput}
+                           onChange={setStepInput}
+                           onVerify={() => verifyStep(2)}
+                           onKeyDown={(e) => { if (e.key === 'Enter') verifyStep(2); }}
+                           disabled={step2Solved}
+                           buttonText={step2Solved ? '[VERIFIED]' : '[VERIFY]'}
+                        />
                     </div>
                 )}
                 
-                 {/* STEP 5 FINAL ASSEMBLY */}
-                {allCluesCollected && !finalSolved && (
-                     <div>
-                        <h3 className="text-lg mt-4">STEP 5: FINAL ASSEMBLY</h3>
+                {step2Solved && (
+                     <div className={activeStep !== 3 ? 'opacity-50' : ''}>
+                        <h3 className="text-lg mt-4">STEP 3: CIPHER WHEEL ANALYSIS</h3>
                         <p className="border-t border-dashed border-green-800 pt-2 mt-2 text-green-300">
-                        {`> CLUES COLLECTED: [ENCRYPT], [test], [SECRET CODE], [KEYWORD]
-> NEW INSTRUCTION: The fragment is hidden in the CONTEXT. What is the primary subject of all cryptographic operations?`}
+                        {`> ENCODED TEXT: "FRPERG PBQR"\n> ACTION: Decode using ROT13`}
                         </p>
-                        <div className="border border-[#00cc00] p-2 my-2 space-x-2 flex">
-                            <label htmlFor="step5">Enter the key fragment:</label>
-                            <input id="step5" value={finalInput} onChange={e => setFinalInput(e.target.value)} className="flex-grow bg-black border-b border-green-700 outline-none focus:border-cyan-400" />
-                            <button onClick={verifyFinal} className="border px-2 hover:bg-green-900">[VERIFY]</button>
-                        </div>
+                        <PuzzleInput 
+                           label="ROT13:"
+                           value={stepInput}
+                           onChange={setStepInput}
+                           onVerify={() => verifyStep(3)}
+                           onKeyDown={(e) => { if (e.key === 'Enter') verifyStep(3); }}
+                           disabled={step3Solved}
+                           buttonText={step3Solved ? '[VERIFIED]' : '[VERIFY]'}
+                        />
+                    </div>
+                )}
+
+                {step3Solved && (
+                     <div className={activeStep !== 4 ? 'opacity-50' : ''}>
+                        <h3 className="text-lg mt-4">STEP 4: HEXADECIMAL TRACE</h3>
+                        <p className="border-t border-dashed border-green-800 pt-2 mt-2 text-green-300">
+                        {`> HEX DATA: 4B 45 59 57 4F 52 44\n> ACTION: Convert hex to ASCII`}
+                        </p>
+                        <PuzzleInput 
+                           label="ASCII:"
+                           value={stepInput}
+                           onChange={setStepInput}
+                           onVerify={() => verifyStep(4)}
+                           onKeyDown={(e) => { if (e.key === 'Enter') verifyStep(4); }}
+                           disabled={step4Solved}
+                           buttonText={step4Solved ? '[VERIFIED]' : '[VERIFY]'}
+                        />
                     </div>
                 )}
             </AsciiBorder>
             
-            {error && <p className="text-red-500 text-center animate-pulse">{error}</p>}
-            
-            {finalSolved && (
-                 <div className="border-2 border-green-500 p-4 my-4 text-center">
-                     <p className="text-xl text-cyan-400">✓ ALL PROTOCOLS VERIFIED</p>
-                     <pre className="text-xs text-green-400 my-4">
-{`         ██████╗ ██╗██████╗ ██╗  ██╗███████╗██████╗
-        ██╔════╝ ██║██╔══██╗██║  ██║██╔════╝██╔══██╗
-        ██║      ██║██████╔╝███████║█████╗  ██████╔╝
-        ██║      ██║██╔═══╝ ██╔══██║██╔══╝  ██╔══██╗
-        ╚██████╗ ██║██║     ██║  ██║███████╗██║  ██║
-         ╚═════╝ ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝`}
-                     </pre>
-                     <p>FRAGMENT 1: CIPHER</p>
-                     <p>VERIFICATION CODE: EK-047-ALPHA</p>
-                     <button onClick={onSolve} className="mt-4 border p-2 w-full hover:bg-green-900">[ CONTINUE TO PART 2 ] →</button>
-                 </div>
+            {allCluesCollected && (
+                 <AsciiBorder title="FINAL DECRYPTION">
+                    <p className="text-center">Synthesize the recovered keywords to form the final data fragment.</p>
+                    <p className="text-center text-cyan-400 my-2 text-xl">
+                        ENCRYPT + TEST + SECRET CODE + KEYWORD = ???
+                    </p>
+                    <PuzzleInput 
+                       label="Fragment 1:"
+                       value={finalInput}
+                       onChange={setFinalInput}
+                       onVerify={verifyFinal}
+                       onKeyDown={(e) => { if (e.key === 'Enter') verifyFinal(); }}
+                       buttonText='[SUBMIT]'
+                    />
+                </AsciiBorder>
             )}
         </div>
     );
-};
+}
 
 const PuzzlePart2: React.FC<{ onSolve: () => void }> = ({ onSolve }) => {
-    const [solvedChallenges, setSolvedChallenges] = useState([false, false, false, false, false]);
-    const [inputs, setInputs] = useState(['', '', '', '', '', '', '', '', '', '']);
-    const [finalInput, setFinalInput] = useState('');
-    const [error, setError] = useState('');
+    // State for each step's solution status
+    const [step1Solved, setStep1Solved] = useState(false);
+    const [step2Solved, setStep2Solved] = useState(false);
+    const [step3Solved, setStep3Solved] = useState(false);
+    const [step4Solved, setStep4Solved] = useState(false);
+    const [step5Solved, setStep5Solved] = useState(false);
+
+    // State for the final puzzle solution
     const [finalSolved, setFinalSolved] = useState(false);
 
-    const handleVerify = (challengeIndex: number, inputIndex1: number, answer1: string, inputIndex2: number = -1, answer2: string = '') => {
-        setError('');
-        const val1 = inputs[inputIndex1].trim().toLowerCase();
-        const val2 = inputIndex2 !== -1 ? inputs[inputIndex2].trim().toLowerCase() : '';
+    // Current step the user is on
+    const [activeStep, setActiveStep] = useState(1);
 
-        const correct1 = val1 === answer1.toLowerCase();
-        const correct2 = inputIndex2 !== -1 ? val2 === answer2.toLowerCase() : true;
-
-        if (correct1 && correct2) {
-            setSolvedChallenges(prev => {
-                const newSolved = [...prev];
-                newSolved[challengeIndex] = true;
-                return newSolved;
-            });
-        } else {
-            setError('ERROR: INVALID DATA - ANALYSIS FAILED');
-            setTimeout(() => setError(''), 2000);
-        }
-    };
-    
-    const handleFinalVerify = () => {
-         setError('');
-        if (finalInput.trim().toLowerCase() === 'pol') {
-            setFinalSolved(true);
-        } else {
-            setError('ERROR: FRAGMENT MISMATCH - PROTOCOL REJECTED');
-            setTimeout(() => setError(''), 2000);
-        }
-    }
-
-    const updateInput = (index: number, value: string) => {
-        setInputs(prev => {
-            const newInputs = [...prev];
-            newInputs[index] = value;
-            return newInputs;
-        });
-    };
-    
-    const allChallengesSolved = solvedChallenges.every(s => s);
-
-    const renderChallenge = (index: number, title: string, code: string, task: string, inputsConfig: {label: string, answer: string, inputIndex: number}[]) => {
-        const isSolved = solvedChallenges[index];
-        const isPreviousSolved = index === 0 || solvedChallenges[index - 1];
-        if (!isPreviousSolved) return null;
-
-        return (
-             <div className="mt-4">
-                <h3 className="text-lg text-yellow-300">{title}</h3>
-                <pre className="bg-black border border-gray-700 p-2 my-2 text-sm whitespace-pre-wrap">{code}</pre>
-                <p className="text-green-300">{task}</p>
-                <div className="border border-[#00cc00] p-2 my-2 space-y-2">
-                    {inputsConfig.map(config => (
-                        <div key={config.inputIndex} className="flex items-center gap-2">
-                             <label htmlFor={`c${index}i${config.inputIndex}`}>{config.label}</label>
-                            <input id={`c${index}i${config.inputIndex}`} value={inputs[config.inputIndex]} onChange={e => updateInput(config.inputIndex, e.target.value)} disabled={isSolved} className="flex-grow bg-black border-b border-green-700 outline-none focus:border-cyan-400" />
-                        </div>
-                    ))}
-                     <button onClick={() => handleVerify(index, inputsConfig[0].inputIndex, inputsConfig[0].answer, inputsConfig.length > 1 ? inputsConfig[1].inputIndex : -1, inputsConfig.length > 1 ? inputsConfig[1].answer : '')} disabled={isSolved} className="border px-2 w-full hover:bg-green-900">{isSolved ? '[VERIFIED]' : '[VERIFY]'}</button>
-                </div>
-            </div>
-        )
-    };
-    
-    return (
-        <div className="p-2 md:p-4 text-sm md:text-base">
-             <pre className="border-2 border-[#00cc00] p-2 text-yellow-400">
-{`╔════════════════════════════════════════════════════════════════╗
-║ █▓▒░ ACCESSING FILE: security_protocol_PART2.dat ░▒▓█         ║
-║ STATUS: [██████░░░░] 60% RECOVERED                             ║
-║ WARNING: ADVANCED PROGRAMMING ANALYSIS REQUIRED                ║
-╚════════════════════════════════════════════════════════════════╝`}
-            </pre>
-            <AsciiBorder title="CODING PROTOCOL CHALLENGES">
-                {renderChallenge(0, "CHALLENGE 1: RECURSIVE PUZZLE SOLVER", `#include <stdio.h> ...\nint main() {\n ...\n int cipher = (max_num * 2) + (max_depth * 5);\n printf("System Code: %d\\n", cipher);\n ...\n}`, "Run this code and find the 'System Code' output and the number with the longest sequence.", [
-                    {label: 'System Code:', answer: '609', inputIndex: 0},
-                    {label: 'Longest Sequence #:', answer: '27', inputIndex: 1}
-                ])}
-                {renderChallenge(1, "CHALLENGE 2: MATRIX MANIPULATION CIPHER", `#include <stdio.h> ...\nvoid rotate_matrix(int mat[3][3]) { ... }\nint main() {\n ...\n printf("%c", matrix[i][i]);\n ...\n}`, "Run and decode the diagonal message and find the checksum.", [
-                    {label: 'Decoded Word:', answer: 'POL', inputIndex: 2},
-                    {label: 'Checksum:', answer: '660', inputIndex: 3}
-                ])}
-                {renderChallenge(2, "CHALLENGE 3: LINKED LIST TRAVERSAL PUZZLE", `#include <stdio.h> ...\nint main() {\n ...\n if (position % 2 == 0) { printf("%c", current->data); }\n ...\n}`, "Decode the message from even-positioned nodes and find the pattern count.", [
-                    {label: 'Decoded Message:', answer: 'POL', inputIndex: 4},
-                    {label: 'Pattern Count:', answer: '3', inputIndex: 5}
-                ])}
-                 {renderChallenge(3, "CHALLENGE 4: BIT MANIPULATION CRYPTOGRAPHY", `#include <stdio.h> ...\nint main() {\n ...\n extract_chars(decrypted);\n ...\n}`, "Run and extract the decrypted sequence and verification hash.", [
-                    {label: 'Decrypted Sequence:', answer: 'POLICE', inputIndex: 6},
-                    {label: 'Verification Hash:', answer: '6405', inputIndex: 7}
-                ])}
-                 {renderChallenge(4, "CHALLENGE 5: RECURSIVE BACKTRACKING MAZE", `#include <stdio.h> ...\nint main() {\n ...\n printf("%c", 80 - (cell_num % 10));\n ...\n}`, "Run the maze solver and decode the hidden message and path length.", [
-                    {label: 'Decoded Message:', answer: 'POL', inputIndex: 8},
-                    {label: 'Path Length:', answer: '13', inputIndex: 9}
-                ])}
-
-                {allChallengesSolved && !finalSolved && (
-                     <div className="mt-4">
-                        <h3 className="text-lg text-yellow-300">FINAL ASSEMBLY</h3>
-                        <p className="text-green-300 pt-2 mt-2 border-t border-dashed border-green-800">
-                            Look at Challenge 2, 3, 4, 5 decoded words/messages. What common 3-letter sequence appears?
-                        </p>
-                         <div className="border border-[#00cc00] p-2 my-2 space-x-2 flex">
-                            <label>ENTER FRAGMENT 2:</label>
-                            <input value={finalInput} onChange={e => setFinalInput(e.target.value)} className="flex-grow bg-black border-b border-green-700 outline-none focus:border-cyan-400" />
-                            <button onClick={handleFinalVerify} className="border px-2 hover:bg-green-900">[VERIFY]</button>
-                        </div>
-                    </div>
-                )}
-            </AsciiBorder>
-             {error && <p className="text-red-500 text-center animate-pulse">{error}</p>}
-             {finalSolved && (
-                 <div className="border-2 border-green-500 p-4 my-4 text-center">
-                     <p className="text-xl text-cyan-400">✓ ALL CODE CHALLENGES SOLVED</p>
-                     <pre className="text-green-400 my-4">
-{`         ██████╗  ██████╗ ██╗
-         ██╔══██╗██╔═══██╗██║
-         ██████╔╝██║   ██║██║
-         ██╔═══╝ ██║   ██║██║
-         ██║     ╚██████╔╝███████╗
-         ╚═╝      ╚═════╝ ╚══════╝`}
-                     </pre>
-                     <p>FRAGMENT 2: POL</p>
-                     <p>VERIFICATION CODE: SP-193-BETA</p>
-                     <p>DIFFICULTY: EXPERT</p>
-                     <button onClick={onSolve} className="mt-4 border p-2 w-full hover:bg-green-900">[ CONTINUE TO PART 3 ] →</button>
-                 </div>
-            )}
-        </div>
-    );
-};
-
-const PuzzlePart3: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-    const [answers, setAnswers] = useState(Array(10).fill(''));
-    const [verifiedSteps, setVerifiedSteps] = useState(Array(10).fill(false));
-    const [fragment3Code, setFragment3Code] = useState('');
-    const [fragment3Solved, setFragment3Solved] = useState(false);
-    const [masterKey, setMasterKey] = useState('');
-    const [masterKeySolved, setMasterKeySolved] = useState(false);
+    // Input for the current step/final puzzle
+    const [currentInput, setCurrentInput] = useState('');
     const [error, setError] = useState('');
 
-    const updateAnswer = (index: number, value: string) => {
-        setAnswers(prev => {
-            const newAnswers = [...prev];
-            newAnswers[index] = value;
-            return newAnswers;
-        });
+    const verifyStep = (step: number) => {
+        setError('');
+        const userInput = currentInput.trim().toLowerCase();
+        let correctAnswer = '';
+
+        switch (step) {
+            case 1: correctAnswer = 'pol'; break;
+            case 2: correctAnswer = '1'; break;
+            case 3: correctAnswer = '6'; break;
+            case 4: correctAnswer = 'g'; break;
+            case 5: correctAnswer = '6'; break;
+        }
+
+        if (userInput === correctAnswer) {
+            switch(step) {
+                case 1: setStep1Solved(true); break;
+                case 2: setStep2Solved(true); break;
+                case 3: setStep3Solved(true); break;
+                case 4: setStep4Solved(true); break;
+                case 5: setStep5Solved(true); break;
+            }
+            setActiveStep(prev => prev + 1);
+            setCurrentInput('');
+        } else {
+            setError('INCORRECT. ANALYSIS FAILED.');
+            setTimeout(() => setError(''), 2000);
+        }
     };
     
-    const verifyStep = (index: number, expectedAnswer?: string) => {
+    const verifyFinal = () => {
         setError('');
-        const userAnswer = answers[index].trim();
-        let isCorrect = false;
-        if (expectedAnswer) {
-            isCorrect = userAnswer.toLowerCase() === expectedAnswer.toLowerCase();
+        if (currentInput.trim().toLowerCase() === 'pol') {
+            setFinalSolved(true);
+            onSolve();
         } else {
-            isCorrect = userAnswer !== '';
-        }
-
-        if(isCorrect) {
-            setVerifiedSteps(prev => {
-                const newSteps = [...prev];
-                newSteps[index] = true;
-                return newSteps;
-            });
-        } else {
-            setError('ERROR: INVALID RESPONSE');
+            setError('ERROR: INCORRECT FRAGMENT - SYSTEM LOCKOUT IMMINENT');
             setTimeout(() => setError(''), 2000);
         }
     }
     
-    const verifyFragment3 = () => {
-        setError('');
-        if(fragment3Code.trim() === '-007') {
-            setFragment3Solved(true);
-        } else {
-            setError('ERROR: INCORRECT FINAL CODE');
-            setTimeout(() => setError(''), 2000);
-        }
-    }
-
-    const activateProtocol = () => {
-        setError('');
-        if(masterKey.trim().toLowerCase() === 'cipherpol-007') {
-            setMasterKeySolved(true);
-        } else {
-            setError('DECRYPTION FAILED. SYSTEM SECURITY ALERTED.');
-        }
-    }
-    
-    const allStepsVerified = verifiedSteps.every(v => v);
-
-    const renderStep = (index: number, question: string, hint: string, expectedAnswer?: string, type: 'text' | 'char' | 'digit' | 'phrase' = 'text' ) => {
-        const isVerified = verifiedSteps[index];
-        const isPreviousVerified = index === 0 || verifiedSteps[index - 1];
-        if(!isPreviousVerified) return null;
-
-        let placeholder = "___________";
-        if(type === 'char' || type === 'digit') placeholder = "_";
-
+    // The final solved screen
+    if (finalSolved) {
         return (
-             <div className="mt-4">
-                <h3 className="text-lg">STEP {index + 1} — {question}</h3>
-                <p className="text-green-300 italic text-sm">{hint}</p>
-                <div className="border border-[#00cc00] p-2 my-2 flex items-center gap-2">
-                    <input value={answers[index]} onChange={e => updateAnswer(index, e.target.value)} disabled={isVerified} placeholder={placeholder} className="w-full bg-black border-b border-green-700 outline-none focus:border-cyan-400" />
-                     <button onClick={() => verifyStep(index, expectedAnswer)} disabled={isVerified} className="border px-2 hover:bg-green-900">{isVerified ? '[VERIFIED]' : '[VERIFY]'}</button>
-                </div>
+            <div className="p-2 md:p-4">
+                 <pre className="text-sm md:text-base border-2 border-[#00cc00] p-4 text-[#00ffff]">
+{`╔══════════════════════════════════════════════════════════╗
+║  ✓ CODE ANALYSIS COMPLETE                                ║
+║  ✓ ALL ALGORITHMS VERIFIED                               ║
+║                                                          ║
+║         ██████╗  ██████╗ ██╗                             ║
+║         ██╔══██╗██╔═══██╗██║                             ║
+║         ██████╔╝██║   ██║██║                             ║
+║         ██╔═══╝ ██║   ██║██║                             ║
+║         ██║     ╚██████╔╝███████╗                        ║
+║         ╚═╝      ╚═════╝ ╚══════╝                        ║
+║                                                          ║
+║  FRAGMENT 2: POL                                         ║
+║  STATUS: SECURED                                         ║
+║  VERIFICATION CODE: SP-193-BETA                          ║
+║                                                          ║
+║  Progress: 2/3 fragments recovered                       ║
+║  Returning to file directory...                          ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝`}
+                 </pre>
             </div>
-        )
-    };
-    
+        );
+    }
 
     return (
         <div className="p-2 md:p-4 text-sm md:text-base">
             <pre className="border-2 border-[#00cc00] p-2 text-[#00ffff]">
 {`╔════════════════════════════════════════════════════════════════╗
-║ █▓▒░ ACCESSING FILE: brainstorm_protocol_PART3.dat ░▒▓█       ║
-║ STATUS: [███████░░░] 70% RECOVERED                             ║
-║ WARNING: FRAGMENT CONTAINS BRAINSTORM MODULES                  ║
+║ █▓▒░ ACCESSING FILE: security_protocol_PART2.dat ░▒▓█         ║
+║ STATUS: [██████░░░░] 60% RECOVERED                             ║
+║ WARNING: SEVERE DATA CORRUPTION                                ║
 ╚════════════════════════════════════════════════════════════════╝`}
             </pre>
+            <pre className="mt-4">
+{`[CRITICAL ERROR - PROGRAMMING ANALYSIS REQUIRED]
+════════════════════════════════════════════════════════════════`}
+            </pre>
+            {error && <p className="text-red-500 text-center my-2 animate-pulse">{error}</p>}
+
+            {/* Step 1 */}
+            <div className={activeStep === 1 ? '' : 'opacity-40'}>
+                <pre className="whitespace-pre-wrap">
+{`
+█▓▒░ STEP 1: CODE COMPILATION ANALYSIS ░▒▓█
+
+> OBJECTIVE: Analyze the following C code snippet
+> TASK: Predict the output without running it
+
+CODE FRAGMENT:
+\`\`\`c
+#include <stdio.h>
+int main() {
+    int x = 80;
+    int y = 79;
+    int z = 76;
+    printf("%c%c%c", x, y, z);
+    return 0;
+}
+\`\`\`
+
+> ACTION: What does this program print?`}
+                </pre>
+                <PuzzleInput label="Output:" value={currentInput} onChange={setCurrentInput} onVerify={() => verifyStep(1)} onKeyDown={(e) => { if (e.key === 'Enter') verifyStep(1); }} disabled={activeStep !== 1} />
+            </div>
+
+            {/* Step 2 */}
+            {step1Solved && <div className={activeStep === 2 ? '' : 'opacity-40'}>
+                <pre className="whitespace-pre-wrap">
+{`════════════════════════════════════════════════════════════════
+█▓▒░ STEP 2: LOGIC GATE SIMULATION [UNLOCKED] ░▒▓█
+
+> INTELLIGENCE: Target uses Boolean logic for verification
+> CIRCUIT DIAGRAM FOUND:
+
+INPUT A = 1 (TRUE)
+INPUT B = 0 (FALSE)  
+INPUT C = 1 (TRUE)
+
+LOGIC OPERATIONS:
+X = A AND B
+Y = NOT X
+Z = Y OR C
+
+> TASK: Calculate final output Z`}
+                </pre>
+                <PuzzleInput label="Value of Z (0 or 1):" value={currentInput} onChange={setCurrentInput} onVerify={() => verifyStep(2)} onKeyDown={(e) => { if (e.key === 'Enter') verifyStep(2); }} disabled={activeStep !== 2} maxLength={1}/>
+            </div>}
             
-            {!masterKeySolved && (
-            <AsciiBorder title="BRAINSTORMING PROTOCOL MATRIX">
-                {!fragment3Solved && (
-                    <>
-                        <p className="text-center">Answer each prompt. After all 10 are answered, collect characters from the specified answers to reveal the hidden final code.</p>
-                        {renderStep(0, "CONTEXT IDENTIFICATION", "Name one high-level goal an organization should prioritize when designing a secure system (one word).")}
-                        {renderStep(1, "SYMBOL FINDER", "What single punctuation symbol commonly separates prefixes from numeric codes (enter one character)?", "-","char")}
-                        {renderStep(2, "NUMERIC CLUE (DIGIT)", "Which single digit commonly represents 'none' or 'zero' (enter one character)?", "0", "digit")}
-                        {renderStep(3, "NUMERIC CLUE (DIGIT)", "Repeat the previous numeric clue — which digit represents 'empty' or 'off' (one character)?", "0", "digit")}
-                        {renderStep(4, "LUCKY DIGIT", "Which single digit is commonly considered 'lucky' in many cultures (enter one character)?", "7", "digit")}
-                        {renderStep(5, "ETHICS SNAPSHOT", "Give one short phrase (2–3 words) that captures the ethical principle designers should adopt when building security features.")}
-                        {renderStep(6, "USABILITY FOCUS", "Name one quick change that improves security without hurting usability (one short phrase).")}
-                        {renderStep(7, "THREAT MODEL", "In two words, describe the most important actor to consider when threat modeling.")}
-                        {renderStep(8, "SIMPLE METRIC", "Give one concise metric (term) you could track to measure security posture.")}
-                        {renderStep(9, "CREATIVE TAGLINE", "Give a short (≤4 words) inspirational tagline that could go on a security team's internal memo.")}
-                    
-                        {allStepsVerified && (
-                             <div className="mt-6 border-t-2 border-dashed border-green-700 pt-4">
-                                <h3 className="text-lg text-yellow-300">FINAL ASSEMBLY - EXTRACT THE SECRET</h3>
-                                 <p className="text-green-300">TAKE:<br/>- Step 2 — the entire answer<br/>- Step 3 — the entire answer<br/>- Step 4 — the entire answer<br/>- Step 5 — the entire answer</p>
-                                <div className="border border-[#00cc00] p-2 my-2 flex items-center gap-2">
-                                     <label>ENTER FINAL CODE:</label>
-                                     <input value={fragment3Code} onChange={e => setFragment3Code(e.target.value)} placeholder="____" className="w-full bg-black border-b border-green-700 outline-none focus:border-cyan-400" />
-                                     <button onClick={verifyFragment3} className="border px-2 hover:bg-green-900">[VERIFY]</button>
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
-                
-                {fragment3Solved && (
-                    <div className="mt-6 border-t-2 border-dashed border-green-700 pt-4">
-                        <p className="text-xl text-cyan-400 text-center">✓ FRAGMENT 3 RECOVERED: <span className="font-bold">-007</span></p>
-                        <h3 className="text-lg text-yellow-300 mt-4">MASTER KEY ASSEMBLY</h3>
-                        <p>Fragment 1: CIPHER</p>
-                        <p>Fragment 2: POL</p>
-                        <p>Fragment 3: -007</p>
-                        <div className="border border-[#00cc00] p-2 my-2 space-y-2">
-                             <label htmlFor="master_key">ENTER COMPLETE MASTER KEY:</label>
-                             <input id="master_key" value={masterKey} onChange={e => setMasterKey(e.target.value)} placeholder="xxxxxxx-xxx" className="w-full bg-black border-b border-green-700 outline-none focus:border-cyan-400" />
-                             <button onClick={activateProtocol} className="w-full border p-2 hover:bg-green-900">[ACTIVATE DECRYPTION PROTOCOL]</button>
-                         </div>
-                    </div>
-                )}
+            {/* Step 3 */}
+            {step2Solved && <div className={activeStep === 3 ? '' : 'opacity-40'}>
+                <pre className="whitespace-pre-wrap">
+{`════════════════════════════════════════════════════════════════
+█▓▒░ STEP 3: ALGORITHM TRACE [UNLOCKED] ░▒▓█
 
-            </AsciiBorder>
-            )}
+> INTERCEPTED: Sorting algorithm execution trace
+> CODE SNIPPET:
+\`\`\`c
+int arr[] = {3, 1, 4, 1, 5};
+// After mysterious sorting algorithm
+// Result: {1, 1, 3, 4, 5}
+\`\`\`
 
-            {error && <p className="text-red-500 text-center animate-pulse">{error}</p>}
+> QUESTION: How many SWAP operations were performed?
+> Use Bubble Sort logic to determine`}
+                </pre>
+                 <PuzzleInput label="Number of swaps:" value={currentInput} onChange={setCurrentInput} onVerify={() => verifyStep(3)} onKeyDown={(e) => { if (e.key === 'Enter') verifyStep(3); }} disabled={activeStep !== 3} />
+            </div>}
+            
+            {/* Step 4 */}
+            {step3Solved && <div className={activeStep === 4 ? '' : 'opacity-40'}>
+                 <pre className="whitespace-pre-wrap">
+{`════════════════════════════════════════════════════════════════
+█▓▒░ STEP 4: POINTER ARITHMETIC [UNLOCKED] ░▒▓█
 
-            {masterKeySolved && (
-                 <div className="border-2 border-cyan-500 p-4 my-4 text-center">
-                      <pre className="text-cyan-300 my-4 text-xs md:text-sm">
-{`  ███████╗██╗   ██╗ ██████╗ ██████╗███████╗███████╗███████╗
-  ██╔════╝██║   ██║██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝
-  ███████╗██║   ██║██║     ██║     █████╗  ███████╗███████╗
-  ╚════██║██║   ██║██║     ██║     ██╔══╝  ╚════██║╚════██║
-  ███████║╚██████╔╝╚██████╗╚██████╗███████╗███████║███████║
-  ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝╚══════╝╚══════╝╚══════╝`}
-                      </pre>
-                     <p className="text-xl">MASTER DECRYPTION KEY: CIPHERPOL-007</p>
-                     <p className="my-4">Mission Status: COMPLETE</p>
-                     <p>You may now proceed.</p>
-                     <button onClick={onComplete} className="mt-4 border p-2 w-full hover:bg-cyan-700">[ PROCEED TO FINAL MISSION ] →</button>
-                 </div>
-            )}
+> ADVANCED C ANALYSIS
+> CODE FRAGMENT:
+\`\`\`c
+#include <stdio.h>
+int main() {
+    char str[] = "PROGRAM";
+    char *ptr = str;
+    ptr += 3;
+    printf("%c", *ptr);
+    return 0;
+}
+\`\`\`
+> TASK: What character is printed?`}
+                </pre>
+                <PuzzleInput label="Character printed:" value={currentInput} onChange={setCurrentInput} onVerify={() => verifyStep(4)} onKeyDown={(e) => { if (e.key === 'Enter') verifyStep(4); }} disabled={activeStep !== 4} maxLength={1} />
+            </div>}
+
+            {/* Step 5 */}
+            {step4Solved && <div className={activeStep === 5 ? '' : 'opacity-40'}>
+                 <pre className="whitespace-pre-wrap">
+{`════════════════════════════════════════════════════════════════
+█▓▒░ STEP 5: BITWISE OPERATION [UNLOCKED] ░▒▓█
+
+> FINAL VERIFICATION: Bitwise XOR challenge
+> CODE:
+\`\`\`c
+int a = 5;    // Binary: 0101
+int b = 3;    // Binary: 0011
+int result = a ^ b;  // XOR operation
+printf("%d", result);
+\`\`\`
+> TASK: Calculate the result of XOR operation`}
+                </pre>
+                <PuzzleInput label="XOR result:" value={currentInput} onChange={setCurrentInput} onVerify={() => verifyStep(5)} onKeyDown={(e) => { if (e.key === 'Enter') verifyStep(5); }} disabled={activeStep !== 5} />
+            </div>}
+
+            {/* Final Assembly */}
+            {step5Solved && <div>
+                <pre className="whitespace-pre-wrap">
+{`════════════════════════════════════════════════════════════════
+█▓▒░ FINAL ASSEMBLY - DECODE THE FRAGMENT ░▒▓█
+
+COLLECTED DATA FROM ALL STEPS:
+
+STEP 1 Output: POL
+STEP 2 Result: 1
+STEP 3 Swaps: 6
+STEP 4 Character: G
+STEP 5 XOR Result: 6
+
+DECRYPTION PROTOCOL:
+"If step 1 output was correct, what 3-letter word did you find?"
+`}
+                </pre>
+                <PuzzleInput 
+                    label="Fragment 2 (3 letters):"
+                    value={currentInput}
+                    onChange={setCurrentInput}
+                    onVerify={verifyFinal}
+                    onKeyDown={(e) => { if (e.key === 'Enter') verifyFinal(); }}
+                    maxLength={3}
+                />
+            </div>}
+        </div>
+    );
+}
+
+
+const PuzzlePart3: React.FC<{ onSolve: () => void }> = ({ onSolve }) => {
+    const [activeStep, setActiveStep] = useState(1);
+    const [answers, setAnswers] = useState<string[]>(Array(10).fill(''));
+    const [currentInput, setCurrentInput] = useState('');
+    const [error, setError] = useState('');
+    const [finalSolved, setFinalSolved] = useState(false);
+
+    const questions = [
+        { title: "SECURITY PRINCIPLE", question: 'What 2-3 word phrase describes designing security from the start?\n(Hint: "___ by Design")', label: "Answer:" },
+        { title: "AUTHENTICATION", question: 'What authentication method uses something you ARE (fingerprint, face)?', label: "Answer:" },
+        { title: "ENCRYPTION", question: "What does AES stand for? (Full form, 3 words)", label: "Answer:" },
+        { title: "ZERO-DAY", question: 'Complete the term: "____-day vulnerability"\n(What number describes unknown exploits with no advance warning?)', label: "Answer (word or digit):" },
+        { title: "NETWORK SECURITY", question: 'What 3-letter acronym protects your network traffic when using public WiFi?\n(Virtual Private ___)', label: "Answer (3 letters):" },
+        { title: "ZERO TRUST", question: 'In "Zero Trust Security", how many entities are trusted by default?', label: "Answer (number):" },
+        { title: "CRYPTOGRAPHY", question: "What does CIA Triad stand for in security?\n(Three words: C___, I___, A___)", label: "Answer:" },
+        { title: "INCIDENT RESPONSE", question: "What is the first phase of incident response?\n(Hint: Starts with P)", label: "Answer:" },
+        { title: "MALWARE", question: "What type of malware disguises itself as legitimate software?\n(Named after a Greek war story)", label: "Answer:" },
+        { title: "OSI MODEL", question: "In the OSI model, which layer number is the Application layer?", label: "Answer (number):" },
+    ];
+
+    const verifyStep = (stepIndex: number) => {
+        setError('');
+        const userInput = currentInput.trim().toLowerCase();
+        if (userInput.length === 0) {
+            setError('INPUT REQUIRED.');
+            setTimeout(() => setError(''), 2000);
+            return;
+        }
+
+        let isCorrect = false;
+        switch (stepIndex) {
+            case 0: isCorrect = userInput.includes('by design') || userInput.includes('by default'); break;
+            case 1: isCorrect = userInput.includes('biometric'); break;
+            case 2: isCorrect = userInput === 'advanced encryption standard'; break;
+            case 3: isCorrect = userInput === '0' || userInput === 'zero'; break;
+            case 4: isCorrect = userInput === 'vpn'; break;
+            case 5: isCorrect = userInput === '0' || userInput === 'zero' || userInput === 'none'; break;
+            case 6: isCorrect = userInput.includes('confidentiality') && userInput.includes('integrity') && userInput.includes('availability'); break;
+            case 7: isCorrect = userInput === 'preparation' || userInput === 'prepare'; break;
+            case 8: isCorrect = userInput === 'trojan' || userInput === 'trojan horse'; break;
+            case 9: isCorrect = userInput === '7' || userInput === 'seven'; break;
+            default: break;
+        }
+
+        if (isCorrect) {
+            const newAnswers = [...answers];
+            newAnswers[stepIndex] = currentInput.trim();
+            setAnswers(newAnswers);
+            setActiveStep(prev => prev + 1);
+            setCurrentInput('');
+        } else {
+            setError('INCORRECT DATA. RE-EVALUATE.');
+            setTimeout(() => setError(''), 2500);
+        }
+    };
+    
+    const verifyFinal = () => {
+        setError('');
+        if (currentInput.trim() === "-007") {
+            setFinalSolved(true);
+            onSolve();
+        } else {
+            setError('FINAL CODE INCORRECT. DECRYPTION FAILED.');
+            setTimeout(() => setError(''), 2500);
+        }
+    };
+
+    if (finalSolved) {
+        return (
+             <div className="p-2 md:p-4">
+                 <pre className="text-sm md:text-base border-2 border-[#00cc00] p-4 text-[#00ffff]">
+{`╔══════════════════════════════════════════════════════════╗
+║  ✓ BRAINSTORM ANALYSIS COMPLETE                          ║
+║  ✓ CREATIVE PROTOCOLS VERIFIED                           ║
+║                                                          ║
+║        ███████╗  ██████╗  ██████╗ ███████╗               ║
+║        ╚══════╝ ██╔═████╗██╔═████╗╚════██║               ║
+║        ███████╗ ██║██╔██║██║██╔██║    ██╔╝               ║
+║        ╚══════╝ ████╔╝██║████╔╝██║   ██╔╝                ║
+║                 ╚██████╔╝╚██████╔╝   ██║                 ║
+║                  ╚═════╝  ╚═════╝    ╚═╝                 ║
+║                                                          ║
+║  FRAGMENT 3: -007                                        ║
+║  STATUS: SECURED                                         ║
+║  VERIFICATION CODE: BP-777-GAMMA                         ║
+║                                                          ║
+║  Progress: 3/3 fragments recovered                       ║
+║  Returning to file directory...                          ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝`}
+                 </pre>
+            </div>
+        )
+    }
+    
+    const SecurityQuestionStep: React.FC<{ step: number; title: string; question: string; label: string; }> = ({ step, title, question, label }) => (
+        <div className={activeStep === step ? '' : 'opacity-40'}>
+            <pre className="whitespace-pre-wrap mt-4">
+{`█▓▒░ QUESTION ${step}: ${title} ░▒▓█
+
+${question}`}
+            </pre>
+            <PuzzleInput
+                label={label}
+                value={currentInput}
+                onChange={setCurrentInput}
+                onVerify={() => verifyStep(step - 1)}
+                disabled={activeStep !== step}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); verifyStep(step - 1); } }}
+            />
+        </div>
+    );
+
+    return (
+        <div className="p-2 md:p-4 text-sm md:text-base">
+            <pre className="border-2 border-[#00cc00] p-2 text-[#00ffff]">
+{`╔════════════════════════════════════════════════════════════════╗
+║ █▓▒░ ACCESSING FILE: access_codes_PART3.dat ░▒▓█              ║
+║ STATUS: [███████░░░] 70% RECOVERED                             ║
+║ FINAL FRAGMENT - ANALYST ASSESSMENT PROTOCOL                   ║
+╚════════════════════════════════════════════════════════════════╝`}
+            </pre>
+            <pre className="mt-4 whitespace-pre-wrap">
+{`[SECURITY INTELLIGENCE EVALUATION - 10 QUESTIONS]
+════════════════════════════════════════════════════════════════`}
+            </pre>
+            {error && <p className="text-red-500 text-center my-2 animate-pulse">{error}</p>}
+            
+            {questions.map((q, i) => (
+                activeStep > i && <SecurityQuestionStep key={i} step={i + 1} {...q} />
+            ))}
+
+            {activeStep > 10 && <div>
+                <pre className="whitespace-pre-wrap mt-4">
+{`█▓▒░ FRAGMENT DECRYPTION PROTOCOL ░▒▓█
+
+ALL QUESTIONS ANSWERED. EXTRACTING HIDDEN PATTERN...
+
+DECODING METHOD:
+────────────────
+> Isolate the answers from the number-related questions.
+
+> Q4: Zero-day vulnerability → Answer: "0"
+> Q6: Zero Trust entities → Answer: "0"
+> Q10: OSI Application layer → Answer: "7"
+
+> ASSEMBLE THE FRAGMENT.
+> Format hint: -XXX (dash and three digits)`}
+                </pre>
+                 <PuzzleInput 
+                    label="Final Code:"
+                    value={currentInput}
+                    onChange={setCurrentInput}
+                    onVerify={verifyFinal}
+                    maxLength={4}
+                    onKeyDown={(e) => { if (e.key === 'Enter') verifyFinal() }}
+                 />
+            </div>}
+
         </div>
     );
 };
 
 
-const FileDirectoryPage: React.FC<{ onReset: () => void }> = ({ onReset }) => {
-    const [stage, setStage] = useState('landing'); // landing, part1, part2, part3
+// --- MAIN PAGE COMPONENT ---
 
-    const renderContent = () => {
-        switch(stage) {
-            case 'part1':
-                return <PuzzlePart1 onSolve={() => setStage('part2')} />;
-            case 'part2':
-                return <PuzzlePart2 onSolve={() => setStage('part3')} />;
-            case 'part3':
-                return <PuzzlePart3 onComplete={onReset} />; // Reset simulation on completion
+const FileDirectoryPage: React.FC<{ onReset: () => void }> = ({ onReset }) => {
+    const [stage, setStage] = useState('landing');
+    const [recoveredFragments, setRecoveredFragments] = useState({
+        part1: false,
+        part2: false,
+        part3: false,
+    });
+
+    const handleSolve = (part: 'part1' | 'part2' | 'part3') => {
+        setRecoveredFragments(prev => ({ ...prev, [part]: true }));
+        setTimeout(() => {
+            setStage('landing');
+        }, 3000);
+    };
+
+    const allRecovered = recoveredFragments.part1 && recoveredFragments.part2 && recoveredFragments.part3;
+
+    const renderStage = () => {
+        if (allRecovered) {
+             return (
+                <div className="p-4">
+                    <AsciiBorder title="SYSTEM RECOVERY COMPLETE">
+                         <TypingLine text="> All fragments recovered. Assembling master file..." onFinished={() => {}} speed={50}/>
+                         <pre className="text-green-400 mt-4 text-center text-xl">
+{`
+  ██████╗  █████╗ ███████╗███████╗██████╗ 
+ ██╔════╝ ██╔══██╗██╔════╝██╔════╝██╔══██╗
+ ██║  ███╗███████║█████╗  █████╗  ██████╔╝
+ ██║   ██║██╔══██║██╔══╝  ██╔══╝  ██╔══██╗
+ ╚██████╔╝██║  ██║███████╗███████╗██║  ██║
+  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝
+`}
+                        </pre>
+                        <p className="text-center text-2xl mt-4">FINAL FRAGMENT: <span className="text-cyan-400">CIPHER-POL--007</span></p>
+                        <p className="text-center mt-2">You have successfully bypassed the Drestien Network security.</p>
+                        <div className="text-center mt-8">
+                            <button onClick={onReset} className="p-2 border border-red-500 text-red-500 hover:bg-red-900">[ END SIMULATION ]</button>
+                        </div>
+                   </AsciiBorder>
+                </div>
+            );
+        }
+
+        switch (stage) {
             case 'landing':
+                return <PuzzleLanding onNavigate={setStage} recoveredFragments={recoveredFragments}/>;
+            case 'part1':
+                return <PuzzlePart1 onSolve={() => handleSolve('part1')} />;
+            case 'part2':
+                return <PuzzlePart2 onSolve={() => handleSolve('part2')} />;
+            case 'part3':
+                return <PuzzlePart3 onSolve={() => handleSolve('part3')} />;
             default:
-                return <PuzzleLanding onNavigate={(part) => setStage(part)} />;
+                return <div>Error: Unknown stage</div>;
         }
     };
-    
+
     return (
-        <div className="min-h-screen bg-black text-[#00ff00] font-mono relative z-0">
+        <div className="w-full h-full overflow-y-auto">
             <MatrixRain />
-            <main className="max-w-4xl mx-auto p-2 md:p-4 relative z-10">
-                {renderContent()}
-            </main>
+            {renderStage()}
         </div>
     );
 };
