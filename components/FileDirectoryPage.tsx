@@ -389,7 +389,7 @@ const PuzzlePart2: React.FC<{ onSolve: () => void }> = ({ onSolve }) => {
         switch (step) {
             case 1: correctAnswer = 'pol'; break;
             case 2: correctAnswer = '1'; break;
-            case 3: correctAnswer = '6'; break;
+            case 3: correctAnswer = '3'; break;
             case 4: correctAnswer = 'g'; break;
             case 5: correctAnswer = '6'; break;
         }
@@ -586,7 +586,7 @@ COLLECTED DATA FROM ALL STEPS:
 
 STEP 1 Output: POL
 STEP 2 Result: 1
-STEP 3 Swaps: 6
+STEP 3 Swaps: 3
 STEP 4 Character: G
 STEP 5 XOR Result: 6
 
